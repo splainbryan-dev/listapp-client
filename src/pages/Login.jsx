@@ -40,7 +40,7 @@ const Login = () => {
         
         {/* Logo */}
         <div style={styles.logoWrap}>
-          <div style={styles.logoIcon}>L</div>
+          <svg width="36" height="36" viewBox="0 0 72 72" fill="none"><defs><linearGradient id="lg1" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#7B2FFF"/><stop offset="50%" stopColor="#4f8ef7"/><stop offset="100%" stopColor="#06B6D4"/></linearGradient></defs><rect width="72" height="72" rx="18" fill="url(#lg1)"/><circle cx="20" cy="20" r="7" fill="white"/><circle cx="20" cy="52" r="7" fill="white"/><circle cx="52" cy="20" r="7" fill="white"/><circle cx="52" cy="52" r="7" fill="white"/><rect x="16" y="26" width="8" height="20" rx="4" fill="white"/><rect x="48" y="26" width="8" height="20" rx="4" fill="white"/><rect x="24" y="32" width="24" height="8" rx="4" fill="white"/></svg>
           <span style={styles.logoText}>ListApp</span>
         </div>
 
