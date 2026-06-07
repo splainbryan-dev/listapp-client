@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import ProtectedRoute from './components/shared/ProtectedRoute'
 import Navbar from './components/shared/Navbar'
+import SplashScreen from './components/shared/SplashScreen'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -9,6 +11,23 @@ import ReviewPage from './pages/ReviewPage'
 import Settings from './pages/Settings'
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true)
+
+  // Check if user is already logged in — persistent login
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    const user = localStorage.getItem('user')
+    // Token already in localStorage = stay logged in, no action needed
+    // Token absent = show login when they navigate there
+    if (token && !user) {
+      localStorage.removeItem('token') // corrupted state, clear it
+    }
+  }, [])
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />
+  }
+
   return (
     <BrowserRouter>
       <Navbar />
