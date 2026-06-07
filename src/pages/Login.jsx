@@ -2,6 +2,25 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
+const HubAdsLogo = () => (
+  <svg width="48" height="48" viewBox="0 0 72 72" fill="none">
+    <defs>
+      <linearGradient id="lg1" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#7B2FFF"/>
+        <stop offset="100%" stopColor="#06B6D4"/>
+      </linearGradient>
+    </defs>
+    <rect width="72" height="72" rx="18" fill="url(#lg1)"/>
+    <circle cx="20" cy="20" r="7" fill="white"/>
+    <circle cx="20" cy="52" r="7" fill="white"/>
+    <circle cx="52" cy="20" r="7" fill="white"/>
+    <circle cx="52" cy="52" r="7" fill="white"/>
+    <rect x="16" y="26" width="8" height="20" rx="4" fill="white"/>
+    <rect x="48" y="26" width="8" height="20" rx="4" fill="white"/>
+    <rect x="24" y="32" width="24" height="8" rx="4" fill="white"/>
+  </svg>
+)
+
 const Login = () => {
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })
@@ -9,9 +28,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setTimeout(() => setMounted(true), 50)
-  }, [])
+  useEffect(() => { setTimeout(() => setMounted(true), 50) }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -30,24 +47,31 @@ const Login = () => {
   }
 
   const handleOAuth = (provider) => {
-    // Placeholder — will wire real OAuth next session
     alert(`${provider} login coming soon! Use email for now.`)
   }
 
   return (
     <div style={styles.page}>
-      <div style={{ ...styles.card, opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(24px)', transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)' }}>
-        
+      <div style={{
+        ...styles.card,
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? 'translateY(0)' : 'translateY(24px)',
+        transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)'
+      }}>
+
         {/* Logo */}
         <div style={styles.logoWrap}>
-          <svg width="36" height="36" viewBox="0 0 72 72" fill="none"><defs><linearGradient id="lg1" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#7B2FFF"/><stop offset="50%" stopColor="#4f8ef7"/><stop offset="100%" stopColor="#06B6D4"/></linearGradient></defs><rect width="72" height="72" rx="18" fill="url(#lg1)"/><circle cx="20" cy="20" r="7" fill="white"/><circle cx="20" cy="52" r="7" fill="white"/><circle cx="52" cy="20" r="7" fill="white"/><circle cx="52" cy="52" r="7" fill="white"/><rect x="16" y="26" width="8" height="20" rx="4" fill="white"/><rect x="48" y="26" width="8" height="20" rx="4" fill="white"/><rect x="24" y="32" width="24" height="8" rx="4" fill="white"/></svg>
-          <span style={styles.logoText}>ListApp</span>
+          <HubAdsLogo />
+          <div style={styles.brandName}>
+            <span style={styles.hub}>Hub</span>
+            <span style={styles.ads}>Ads</span>
+          </div>
         </div>
 
         <h1 style={styles.title}>Welcome back</h1>
         <p style={styles.sub}>Sign in to your account</p>
 
-        {/* OAuth Buttons */}
+        {/* OAuth */}
         <div style={styles.oauthGroup}>
           <button style={styles.oauthBtn} onClick={() => handleOAuth('Google')}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -58,14 +82,12 @@ const Login = () => {
             </svg>
             Continue with Google
           </button>
-
           <button style={styles.oauthBtn} onClick={() => handleOAuth('Apple')}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-              <path d="M13.173 9.438c-.02-2.14 1.748-3.174 1.827-3.224-1-1.459-2.548-1.659-3.094-1.678-1.314-.134-2.573.775-3.24.775-.667 0-1.693-.757-2.786-.736-1.427.021-2.748.833-3.481 2.113-1.487 2.578-.381 6.394 1.067 8.485.706 1.022 1.547 2.166 2.653 2.124 1.067-.042 1.467-.687 2.754-.687 1.287 0 1.647.687 2.774.664 1.147-.021 1.867-1.042 2.567-2.068.814-1.183 1.147-2.328 1.167-2.387-.027-.012-2.24-.858-2.208-3.381zM11.073 3.16c.587-.712 .981-1.694.873-2.676-.843.034-1.867.562-2.474 1.274-.54.625-1.014 1.627-.887 2.585.94.073 1.9-.476 2.488-1.183z"/>
+              <path d="M13.173 9.438c-.02-2.14 1.748-3.174 1.827-3.224-1-1.459-2.548-1.659-3.094-1.678-1.314-.134-2.573.775-3.24.775-.667 0-1.693-.757-2.786-.736-1.427.021-2.748.833-3.481 2.113-1.487 2.578-.381 6.394 1.067 8.485.706 1.022 1.547 2.166 2.653 2.124 1.067-.042 1.467-.687 2.754-.687 1.287 0 1.647.687 2.774.664 1.147-.021 1.867-1.042 2.567-2.068.814-1.183 1.147-2.328 1.167-2.387-.027-.012-2.24-.858-2.208-3.381zM11.073 3.16c.587-.712.981-1.694.873-2.676-.843.034-1.867.562-2.474 1.274-.54.625-1.014 1.627-.887 2.585.94.073 1.9-.476 2.488-1.183z"/>
             </svg>
             Continue with Apple
           </button>
-
           <button style={{ ...styles.oauthBtn, ...styles.xBtn }} onClick={() => handleOAuth('X')}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -74,15 +96,14 @@ const Login = () => {
           </button>
         </div>
 
-        {/* Divider */}
         <div style={styles.divider}>
           <div style={styles.dividerLine} />
           <span style={styles.dividerText}>or</span>
           <div style={styles.dividerLine} />
         </div>
 
-        {/* Email Form */}
         {error && <div style={styles.error}>{error}</div>}
+
         <form onSubmit={handleSubmit}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Email</label>
@@ -108,157 +129,27 @@ const Login = () => {
 }
 
 const styles = {
-  page: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-    fontFamily: "'DM Sans', -apple-system, sans-serif",
-  },
-  card: {
-    background: 'rgba(255,255,255,0.04)',
-    backdropFilter: 'blur(24px)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '24px',
-    padding: '40px 36px',
-    width: '100%',
-    maxWidth: '420px',
-    boxShadow: '0 32px 64px rgba(0,0,0,0.4)',
-  },
-  logoWrap: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '28px',
-    justifyContent: 'center',
-  },
-  logoIcon: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    background: 'linear-gradient(135deg, #4f8ef7, #2563eb)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: '18px',
-  },
-  logoText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: '20px',
-    letterSpacing: '-0.3px',
-  },
-  title: {
-    color: '#fff',
-    fontSize: '26px',
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: '6px',
-    letterSpacing: '-0.5px',
-  },
-  sub: {
-    color: 'rgba(255,255,255,0.45)',
-    fontSize: '14px',
-    textAlign: 'center',
-    marginBottom: '28px',
-  },
-  oauthGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    marginBottom: '20px',
-  },
-  oauthBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    padding: '12px',
-    borderRadius: '12px',
-    border: '1px solid rgba(255,255,255,0.1)',
-    background: 'rgba(255,255,255,0.06)',
-    color: '#fff',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
-    fontFamily: 'inherit',
-  },
-  xBtn: {
-    background: 'rgba(0,0,0,0.3)',
-    border: '1px solid rgba(255,255,255,0.15)',
-  },
-  divider: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '20px',
-  },
-  dividerLine: {
-    flex: 1,
-    height: '1px',
-    background: 'rgba(255,255,255,0.1)',
-  },
-  dividerText: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: '12px',
-    fontWeight: '500',
-  },
-  error: {
-    background: 'rgba(239,68,68,0.15)',
-    border: '1px solid rgba(239,68,68,0.3)',
-    color: '#fca5a5',
-    borderRadius: '10px',
-    padding: '12px',
-    fontSize: '13px',
-    marginBottom: '16px',
-  },
+  page: { minHeight: '100vh', background: 'linear-gradient(135deg, #080818 0%, #0f0f2a 50%, #080818 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: "'DM Sans', -apple-system, sans-serif" },
+  card: { background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', padding: '40px 36px', width: '100%', maxWidth: '420px', boxShadow: '0 32px 64px rgba(0,0,0,0.5)' },
+  logoWrap: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', justifyContent: 'center' },
+  brandName: { display: 'flex', alignItems: 'baseline' },
+  hub: { color: '#fff', fontWeight: '800', fontSize: '26px', letterSpacing: '-0.5px' },
+  ads: { fontWeight: '800', fontSize: '26px', letterSpacing: '-0.5px', background: 'linear-gradient(90deg, #a78bfa, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+  title: { color: '#fff', fontSize: '24px', fontWeight: '700', textAlign: 'center', marginBottom: '6px', letterSpacing: '-0.5px' },
+  sub: { color: 'rgba(255,255,255,0.4)', fontSize: '14px', textAlign: 'center', marginBottom: '24px' },
+  oauthGroup: { display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' },
+  oauthBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit' },
+  xBtn: { background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)' },
+  divider: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' },
+  dividerLine: { flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' },
+  dividerText: { color: 'rgba(255,255,255,0.3)', fontSize: '12px' },
+  error: { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', borderRadius: '10px', padding: '12px', fontSize: '13px', marginBottom: '16px' },
   formGroup: { marginBottom: '14px' },
-  label: {
-    display: 'block',
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: '13px',
-    fontWeight: '500',
-    marginBottom: '6px',
-  },
-  input: {
-    width: '100%',
-    padding: '11px 14px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.1)',
-    background: 'rgba(255,255,255,0.06)',
-    color: '#fff',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-    outline: 'none',
-    transition: 'border-color 0.15s',
-  },
-  submitBtn: {
-    width: '100%',
-    padding: '13px',
-    borderRadius: '12px',
-    border: 'none',
-    background: 'linear-gradient(135deg, #4f8ef7, #2563eb)',
-    color: '#fff',
-    fontSize: '15px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    marginTop: '4px',
-    transition: 'opacity 0.15s',
-  },
-  footer: {
-    textAlign: 'center',
-    marginTop: '20px',
-    fontSize: '13px',
-    color: 'rgba(255,255,255,0.4)',
-  },
-  link: { color: '#4f8ef7', textDecoration: 'none', fontWeight: '500' },
+  label: { display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: '500', marginBottom: '6px' },
+  input: { width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' },
+  submitBtn: { width: '100%', padding: '13px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #7B2FFF, #06B6D4)', color: '#fff', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', marginTop: '4px' },
+  footer: { textAlign: 'center', marginTop: '20px', fontSize: '13px', color: 'rgba(255,255,255,0.4)' },
+  link: { color: '#a78bfa', textDecoration: 'none', fontWeight: '500' },
 }
 
 export default Login

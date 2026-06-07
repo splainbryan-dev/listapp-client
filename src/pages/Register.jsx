@@ -2,21 +2,69 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
+const HubAdsLogo = () => (
+  <svg width="48" height="48" viewBox="0 0 72 72" fill="none">
+    <defs>
+      <linearGradient id="rg1" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#7B2FFF"/>
+        <stop offset="100%" stopColor="#06B6D4"/>
+      </linearGradient>
+    </defs>
+    <rect width="72" height="72" rx="18" fill="url(#rg1)"/>
+    <circle cx="20" cy="20" r="7" fill="white"/>
+    <circle cx="20" cy="52" r="7" fill="white"/>
+    <circle cx="52" cy="20" r="7" fill="white"/>
+    <circle cx="52" cy="52" r="7" fill="white"/>
+    <rect x="16" y="26" width="8" height="20" rx="4" fill="white"/>
+    <rect x="48" y="26" width="8" height="20" rx="4" fill="white"/>
+    <rect x="24" y="32" width="24" height="8" rx="4" fill="white"/>
+  </svg>
+)
+
 const Register = () => {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [pwMatch, setPwMatch] = useState(null) // null = not checked, true = match, false = no match
 
   useEffect(() => { setTimeout(() => setMounted(true), 50) }, [])
 
+  const handleConfirmChange = (val) => {
+    setForm(f => ({ ...f, confirmPassword: val }))
+    if (val.length > 0) {
+      setPwMatch(form.password === val)
+    } else {
+      setPwMatch(null)
+    }
+  }
+
+  const handlePasswordChange = (val) => {
+    setForm(f => ({ ...f, password: val }))
+    if (form.confirmPassword.length > 0) {
+      setPwMatch(val === form.confirmPassword)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters')
+      return
+    }
     setLoading(true)
     setError('')
     try {
-      const res = await api.post('/auth/register', form)
+      const res = await api.post('/auth/register', {
+        name: form.name,
+        email: form.email,
+        password: form.password
+      })
       localStorage.setItem('token', res.data.token)
       localStorage.setItem('user', JSON.stringify(res.data.user))
       navigate('/')
@@ -31,29 +79,30 @@ const Register = () => {
     alert(`${provider} login coming soon! Use email for now.`)
   }
 
+  const pwBorderColor = pwMatch === null ? 'rgba(255,255,255,0.1)' : pwMatch ? '#22c55e' : '#ef4444'
+
   return (
     <div style={styles.page}>
-      <div style={{ ...styles.card, opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(24px)', transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)' }}>
+      <div style={{
+        ...styles.card,
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? 'translateY(0)' : 'translateY(24px)',
+        transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)'
+      }}>
+
+        {/* Logo */}
         <div style={styles.logoWrap}>
-          <svg width="44" height="44" viewBox="0 0 72 72" fill="none">
-            <defs><linearGradient id="lg2" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#7B2FFF"/><stop offset="100%" stopColor="#06B6D4"/></linearGradient></defs>
-            <rect width="72" height="72" rx="18" fill="url(#lg2)"/>
-            <circle cx="20" cy="20" r="7" fill="white"/>
-            <circle cx="20" cy="52" r="7" fill="white"/>
-            <circle cx="52" cy="20" r="7" fill="white"/>
-            <circle cx="52" cy="52" r="7" fill="white"/>
-            <rect x="16" y="26" width="8" height="20" rx="4" fill="white"/>
-            <rect x="48" y="26" width="8" height="20" rx="4" fill="white"/>
-            <rect x="24" y="32" width="24" height="8" rx="4" fill="white"/>
-          </svg>
+          <HubAdsLogo />
           <div style={styles.brandName}>
-            <span style={styles.hub}>Hub</span><span style={styles.ads}>Ads</span>
+            <span style={styles.hub}>Hub</span>
+            <span style={styles.ads}>Ads</span>
           </div>
         </div>
 
         <h1 style={styles.title}>Create account</h1>
         <p style={styles.sub}>Start selling smarter today</p>
 
+        {/* OAuth */}
         <div style={styles.oauthGroup}>
           <button style={styles.oauthBtn} onClick={() => handleOAuth('Google')}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -85,6 +134,7 @@ const Register = () => {
         </div>
 
         {error && <div style={styles.error}>{error}</div>}
+
         <form onSubmit={handleSubmit}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Name</label>
@@ -99,9 +149,28 @@ const Register = () => {
           <div style={styles.formGroup}>
             <label style={styles.label}>Password</label>
             <input style={styles.input} type="password" placeholder="Min 8 characters"
-              value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={8} />
+              value={form.password} onChange={e => handlePasswordChange(e.target.value)} required minLength={8} />
           </div>
-          <button style={{ ...styles.submitBtn, opacity: loading ? 0.7 : 1 }} type="submit" disabled={loading}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>
+              Confirm Password
+              {pwMatch === true && <span style={styles.matchOk}> ✓ Passwords match</span>}
+              {pwMatch === false && <span style={styles.matchNo}> ✗ Passwords don't match</span>}
+            </label>
+            <input
+              style={{ ...styles.input, borderColor: pwBorderColor }}
+              type="password"
+              placeholder="Re-enter password"
+              value={form.confirmPassword}
+              onChange={e => handleConfirmChange(e.target.value)}
+              required
+            />
+          </div>
+          <button
+            style={{ ...styles.submitBtn, opacity: (loading || pwMatch === false) ? 0.6 : 1 }}
+            type="submit"
+            disabled={loading || pwMatch === false}
+          >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
@@ -115,28 +184,29 @@ const Register = () => {
 }
 
 const styles = {
-  page: { minHeight: '100vh', background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: "'DM Sans', -apple-system, sans-serif" },
-  card: { background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', padding: '40px 36px', width: '100%', maxWidth: '420px', boxShadow: '0 32px 64px rgba(0,0,0,0.4)' },
-  logoWrap: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px', justifyContent: 'center' },
-  logoIcon: { width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #4f8ef7, #2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '18px' },
+  page: { minHeight: '100vh', background: 'linear-gradient(135deg, #080818 0%, #0f0f2a 50%, #080818 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: "'DM Sans', -apple-system, sans-serif" },
+  card: { background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', padding: '40px 36px', width: '100%', maxWidth: '420px', boxShadow: '0 32px 64px rgba(0,0,0,0.5)' },
+  logoWrap: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', justifyContent: 'center' },
   brandName: { display: 'flex', alignItems: 'baseline' },
-  hub: { color: '#fff', fontWeight: '800', fontSize: '22px', letterSpacing: '-0.3px' },
-  ads: { fontWeight: '800', fontSize: '22px', letterSpacing: '-0.3px', background: 'linear-gradient(90deg, #a78bfa, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
-  title: { color: '#fff', fontSize: '26px', fontWeight: '700', textAlign: 'center', marginBottom: '6px', letterSpacing: '-0.5px' },
-  sub: { color: 'rgba(255,255,255,0.45)', fontSize: '14px', textAlign: 'center', marginBottom: '28px' },
+  hub: { color: '#fff', fontWeight: '800', fontSize: '26px', letterSpacing: '-0.5px' },
+  ads: { fontWeight: '800', fontSize: '26px', letterSpacing: '-0.5px', background: 'linear-gradient(90deg, #a78bfa, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+  title: { color: '#fff', fontSize: '24px', fontWeight: '700', textAlign: 'center', marginBottom: '6px', letterSpacing: '-0.5px' },
+  sub: { color: 'rgba(255,255,255,0.4)', fontSize: '14px', textAlign: 'center', marginBottom: '24px' },
   oauthGroup: { display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' },
-  oauthBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit' },
+  oauthBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit' },
   xBtn: { background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.15)' },
   divider: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' },
   dividerLine: { flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' },
-  dividerText: { color: 'rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: '500' },
+  dividerText: { color: 'rgba(255,255,255,0.3)', fontSize: '12px' },
   error: { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', borderRadius: '10px', padding: '12px', fontSize: '13px', marginBottom: '16px' },
   formGroup: { marginBottom: '14px' },
   label: { display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: '500', marginBottom: '6px' },
-  input: { width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' },
-  submitBtn: { width: '100%', padding: '13px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #4f8ef7, #2563eb)', color: '#fff', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', marginTop: '4px' },
+  input: { width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s' },
+  submitBtn: { width: '100%', padding: '13px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #7B2FFF, #06B6D4)', color: '#fff', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', marginTop: '4px', transition: 'opacity 0.15s' },
   footer: { textAlign: 'center', marginTop: '20px', fontSize: '13px', color: 'rgba(255,255,255,0.4)' },
-  link: { color: '#4f8ef7', textDecoration: 'none', fontWeight: '500' },
+  link: { color: '#a78bfa', textDecoration: 'none', fontWeight: '500' },
+  matchOk: { color: '#22c55e', fontSize: '12px', fontWeight: '500', marginLeft: '6px' },
+  matchNo: { color: '#ef4444', fontSize: '12px', fontWeight: '500', marginLeft: '6px' },
 }
 
 export default Register
