@@ -35,8 +35,8 @@ const Register = () => {
     <div style={styles.page}>
       <div style={{ ...styles.card, opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(24px)', transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)' }}>
         <div style={styles.logoWrap}>
-          <svg width="40" height="40" viewBox="0 0 72 72" fill="none">
-            <defs><linearGradient id="lg2" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#7B2FFF"/><stop offset="50%" stopColor="#4f8ef7"/><stop offset="100%" stopColor="#06B6D4"/></linearGradient></defs>
+          <svg width="44" height="44" viewBox="0 0 72 72" fill="none">
+            <defs><linearGradient id="lg2" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#7B2FFF"/><stop offset="100%" stopColor="#06B6D4"/></linearGradient></defs>
             <rect width="72" height="72" rx="18" fill="url(#lg2)"/>
             <circle cx="20" cy="20" r="7" fill="white"/>
             <circle cx="20" cy="52" r="7" fill="white"/>
@@ -46,6 +46,9 @@ const Register = () => {
             <rect x="48" y="26" width="8" height="20" rx="4" fill="white"/>
             <rect x="24" y="32" width="24" height="8" rx="4" fill="white"/>
           </svg>
+          <div style={styles.brandName}>
+            <span style={styles.hub}>Hub</span><span style={styles.ads}>Ads</span>
+          </div>
         </div>
 
         <h1 style={styles.title}>Create account</h1>
@@ -116,7 +119,9 @@ const styles = {
   card: { background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', padding: '40px 36px', width: '100%', maxWidth: '420px', boxShadow: '0 32px 64px rgba(0,0,0,0.4)' },
   logoWrap: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px', justifyContent: 'center' },
   logoIcon: { width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #4f8ef7, #2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '18px' },
-  logoText: { color: '#fff', fontWeight: '700', fontSize: '20px', letterSpacing: '-0.3px' },
+  brandName: { display: 'flex', alignItems: 'baseline' },
+  hub: { color: '#fff', fontWeight: '800', fontSize: '22px', letterSpacing: '-0.3px' },
+  ads: { fontWeight: '800', fontSize: '22px', letterSpacing: '-0.3px', background: 'linear-gradient(90deg, #a78bfa, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
   title: { color: '#fff', fontSize: '26px', fontWeight: '700', textAlign: 'center', marginBottom: '6px', letterSpacing: '-0.5px' },
   sub: { color: 'rgba(255,255,255,0.45)', fontSize: '14px', textAlign: 'center', marginBottom: '28px' },
   oauthGroup: { display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' },
