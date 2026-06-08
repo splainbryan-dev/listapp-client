@@ -27,11 +27,12 @@ const SplashScreen = ({ onComplete }) => {
         src="/hubads-splash.jpg"
         alt="HubAds"
         style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
+          width: '320px',
+          height: '320px',
+          objectFit: 'contain',
+          borderRadius: '32px',
           opacity: phase === 'enter' ? 0 : 1,
-          transform: phase === 'enter' ? 'scale(1.05)' : 'scale(1)',
+          transform: phase === 'enter' ? 'scale(0.9)' : 'scale(1)',
           transition: 'opacity 0.8s ease, transform 0.8s ease',
         }}
       />
