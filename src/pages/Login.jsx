@@ -47,7 +47,11 @@ const Login = () => {
   }
 
   const handleOAuth = (provider) => {
-    alert(`${provider} login coming soon! Use email for now.`)
+    if (provider === 'Google') {
+      window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`
+    } else {
+      alert(`${provider} login coming soon!`)
+    }
   }
 
   return (

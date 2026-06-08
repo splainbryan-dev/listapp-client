@@ -9,18 +9,16 @@ import Register from './pages/Register'
 import NewListing from './pages/NewListing'
 import ReviewPage from './pages/ReviewPage'
 import Settings from './pages/Settings'
+import AuthCallback from './pages/AuthCallback'
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
 
-  // Check if user is already logged in — persistent login
   useEffect(() => {
     const token = localStorage.getItem('token')
     const user = localStorage.getItem('user')
-    // Token already in localStorage = stay logged in, no action needed
-    // Token absent = show login when they navigate there
     if (token && !user) {
-      localStorage.removeItem('token') // corrupted state, clear it
+      localStorage.removeItem('token')
     }
   }, [])
 
@@ -35,6 +33,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/listing/new" element={<ProtectedRoute><NewListing /></ProtectedRoute>} />
         <Route path="/review/:listingId" element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

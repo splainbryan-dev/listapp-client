@@ -76,7 +76,11 @@ const Register = () => {
   }
 
   const handleOAuth = (provider) => {
-    alert(`${provider} login coming soon! Use email for now.`)
+    if (provider === 'Google') {
+      window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`
+    } else {
+      alert(`${provider} login coming soon!`)
+    }
   }
 
   const pwBorderColor = pwMatch === null ? 'rgba(255,255,255,0.1)' : pwMatch ? '#22c55e' : '#ef4444'
