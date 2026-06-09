@@ -3,22 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
 const HubAdsLogo = () => (
-  <svg width="48" height="48" viewBox="0 0 72 72" fill="none">
-    <defs>
-      <linearGradient id="rg1" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="#7B2FFF"/>
-        <stop offset="100%" stopColor="#06B6D4"/>
-      </linearGradient>
-    </defs>
-    <rect width="72" height="72" rx="18" fill="url(#rg1)"/>
-    <circle cx="20" cy="20" r="7" fill="white"/>
-    <circle cx="20" cy="52" r="7" fill="white"/>
-    <circle cx="52" cy="20" r="7" fill="white"/>
-    <circle cx="52" cy="52" r="7" fill="white"/>
-    <rect x="16" y="26" width="8" height="20" rx="4" fill="white"/>
-    <rect x="48" y="26" width="8" height="20" rx="4" fill="white"/>
-    <rect x="24" y="32" width="24" height="8" rx="4" fill="white"/>
-  </svg>
+  <img
+    src="/hubads-logo.jpg"
+    alt="HubAds"
+    style={{ width: '52px', height: '52px', objectFit: 'contain', borderRadius: '14px' }}
+  />
 )
 
 const Register = () => {
@@ -27,7 +16,7 @@ const Register = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [pwMatch, setPwMatch] = useState(null) // null = not checked, true = match, false = no match
+  const [pwMatch, setPwMatch] = useState(null)
 
   useEffect(() => { setTimeout(() => setMounted(true), 50) }, [])
 
@@ -78,6 +67,8 @@ const Register = () => {
   const handleOAuth = (provider) => {
     if (provider === 'Google') {
       window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`
+    } else if (provider === 'X') {
+      window.location.href = `${import.meta.env.VITE_API_URL}/auth/x`
     } else {
       alert(`${provider} login coming soon!`)
     }
@@ -93,8 +84,6 @@ const Register = () => {
         transform: mounted ? 'translateY(0)' : 'translateY(24px)',
         transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)'
       }}>
-
-        {/* Logo */}
         <div style={styles.logoWrap}>
           <HubAdsLogo />
           <div style={styles.brandName}>
@@ -106,7 +95,6 @@ const Register = () => {
         <h1 style={styles.title}>Create account</h1>
         <p style={styles.sub}>Start selling smarter today</p>
 
-        {/* OAuth */}
         <div style={styles.oauthGroup}>
           <button style={styles.oauthBtn} onClick={() => handleOAuth('Google')}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">

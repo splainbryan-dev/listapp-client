@@ -30,11 +30,11 @@ const SplashScreen = ({ onComplete }) => {
       pointerEvents: phase === 'exit' ? 'none' : 'all',
     }}>
       <img
-        src="/hubads-splash.jpg"
+        src="/hubads-logo.jpg"
         alt="HubAds"
         style={{
-          width: '320px',
-          height: '320px',
+          width: '160px',
+          height: '160px',
           objectFit: 'contain',
           borderRadius: '32px',
           opacity: phase === 'enter' ? 0 : 1,
