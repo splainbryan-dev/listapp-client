@@ -2,13 +2,19 @@ import { useEffect, useState } from 'react'
 
 const SplashScreen = ({ onComplete }) => {
   const [phase, setPhase] = useState('enter')
+  const [gone, setGone] = useState(false)
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('hold'), 100)
     const t2 = setTimeout(() => setPhase('exit'), 2400)
-    const t3 = setTimeout(() => onComplete(), 3000)
+    const t3 = setTimeout(() => {
+      setGone(true)
+      onComplete()
+    }, 3000)
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, [])
+
+  if (gone) return null
 
   return (
     <div style={{

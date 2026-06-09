@@ -17,29 +17,25 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem('token')
     const user = localStorage.getItem('user')
-    if (token && !user) {
-      localStorage.removeItem('token')
-    }
+    if (token && !user) localStorage.removeItem('token')
   }, [])
 
-  if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />
-  }
-
   return (
-    <BrowserRouter>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/listing/new" element={<ProtectedRoute><NewListing /></ProtectedRoute>} />
-        <Route path="/review/:listingId" element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      </Routes>
-    </BrowserRouter>
+    <>
+      {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+      <BrowserRouter>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/listing/new" element={<ProtectedRoute><NewListing /></ProtectedRoute>} />
+          <Route path="/review/:listingId" element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        </Routes>
+      </BrowserRouter>
+    </>
   )
 }
-
 export default App

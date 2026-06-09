@@ -2,6 +2,18 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
+// eBay-specific
+const EBAY_SHIPPING_OPTIONS = [
+  'Free Shipping', 'Flat Rate', 'Calculated by buyer location', 'Local Pickup Only', 'Freight'
+]
+const EBAY_RETURN_POLICIES = [
+  'No Returns', '30 Day Returns - Buyer Pays', '30 Day Returns - Free Returns',
+  '60 Day Returns - Buyer Pays', '60 Day Returns - Free Returns'
+]
+const EBAY_DURATIONS = ['3 days', '5 days', '7 days', '10 days', '30 days', 'Good Till Cancelled']
+const EBAY_LISTING_TYPES = ['Fixed Price', 'Auction']
+const PACKAGE_SIZES = ['Letter', 'Large Envelope', 'Package/Thick Envelope', 'Large Package', 'Extra Large Package']
+
 // Platform definitions
 const PLATFORMS = [
   { id: 'facebook', label: 'Facebook Marketplace', icon: '📘' },
@@ -217,7 +229,103 @@ const GeneralFields = ({ form, set, category }) => (
   </div>
 )
 
-const NewListing = () => {
+const EbayFields = ({ form, set }) => (
+  <div>
+    <div style={styles.sectionTitle}>🛒 eBay Listing Settings</div>
+    <div style={styles.grid2}>
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Listing Type</label>
+        <select style={styles.select} value={form.ebayListingType} onChange={e => set('ebayListingType', e.target.value)}>
+          <option value="">Select type</option>
+          {EBAY_LISTING_TYPES.map(t => <option key={t}>{t}</option>)}
+        </select>
+      </div>
+      {form.ebayListingType === 'Auction' && (
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Starting Bid ($)</label>
+          <input style={styles.input} type="number" min="0" step="0.01" placeholder="1.00"
+            value={form.ebayStartingBid} onChange={e => set('ebayStartingBid', e.target.value)} />
+        </div>
+      )}
+      {form.ebayListingType === 'Auction' && (
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Reserve Price ($) <span style={styles.optional}>(optional)</span></label>
+          <input style={styles.input} type="number" min="0" step="0.01" placeholder="0.00"
+            value={form.ebayReserve} onChange={e => set('ebayReserve', e.target.value)} />
+        </div>
+      )}
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Listing Duration</label>
+        <select style={styles.select} value={form.ebayDuration} onChange={e => set('ebayDuration', e.target.value)}>
+          <option value="">Select duration</option>
+          {EBAY_DURATIONS.map(d => <option key={d}>{d}</option>)}
+        </select>
+      </div>
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Quantity</label>
+        <input style={styles.input} type="number" min="1" placeholder="1"
+          value={form.ebayQuantity} onChange={e => set('ebayQuantity', e.target.value)} />
+      </div>
+      <div style={styles.formGroup}>
+        <label style={styles.label}>SKU / Item Number <span style={styles.optional}>(optional)</span></label>
+        <input style={styles.input} placeholder="Your internal reference"
+          value={form.ebaySku} onChange={e => set('ebaySku', e.target.value)} />
+      </div>
+    </div>
+
+    <div style={styles.sectionTitle} >📦 Shipping & Returns</div>
+    <div style={styles.grid2}>
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Shipping Option</label>
+        <select style={styles.select} value={form.ebayShipping} onChange={e => set('ebayShipping', e.target.value)}>
+          <option value="">Select option</option>
+          {EBAY_SHIPPING_OPTIONS.map(s => <option key={s}>{s}</option>)}
+        </select>
+      </div>
+      {form.ebayShipping === 'Flat Rate' && (
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Shipping Cost ($)</label>
+          <input style={styles.input} type="number" min="0" step="0.01" placeholder="0.00"
+            value={form.ebayShippingCost} onChange={e => set('ebayShippingCost', e.target.value)} />
+        </div>
+      )}
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Package Size</label>
+        <select style={styles.select} value={form.ebayPackageSize} onChange={e => set('ebayPackageSize', e.target.value)}>
+          <option value="">Select size</option>
+          {PACKAGE_SIZES.map(s => <option key={s}>{s}</option>)}
+        </select>
+      </div>
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Package Weight (lbs)</label>
+        <input style={styles.input} type="number" min="0" step="0.1" placeholder="e.g. 2.5"
+          value={form.ebayWeight} onChange={e => set('ebayWeight', e.target.value)} />
+      </div>
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Handling Time</label>
+        <select style={styles.select} value={form.ebayHandling} onChange={e => set('ebayHandling', e.target.value)}>
+          <option value="">Select handling time</option>
+          {['Same Day', '1 Business Day', '2 Business Days', '3 Business Days', '5 Business Days'].map(h => <option key={h}>{h}</option>)}
+        </select>
+      </div>
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Return Policy</label>
+        <select style={styles.select} value={form.ebayReturns} onChange={e => set('ebayReturns', e.target.value)}>
+          <option value="">Select return policy</option>
+          {EBAY_RETURN_POLICIES.map(r => <option key={r}>{r}</option>)}
+        </select>
+      </div>
+    </div>
+
+    <div style={styles.formGroup}>
+      <label style={styles.label}>Ship-From ZIP Code</label>
+      <input style={styles.input} placeholder="e.g. 74401"
+        value={form.ebayZip} onChange={e => set('ebayZip', e.target.value)} />
+    </div>
+  </div>
+)
+
+  const NewListing = () => {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -235,7 +343,23 @@ const NewListing = () => {
     deviceType: '', brand: '', storage: '', carrier: '', screenSize: '', batteryHealth: '', includes: '',
     // General
     dimensions: '',
+    // eBay
+
+    ebayListingType: 'Fixed Price',
+    ebayStartingBid: '',
+    ebayReserve: '',
+    ebayDuration: 'Good Till Cancelled',
+    ebayQuantity: '1',
+    ebaySku: '',
+    ebayShipping: 'Flat Rate',
+    ebayShippingCost: '',
+    ebayPackageSize: '',
+    ebayWeight: '',
+    ebayHandling: '1 Business Day',
+    ebayReturns: '30 Day Returns - Buyer Pays',
+    ebayZip: '',
   })
+
 
   const set = (field, val) => setForm(f => ({ ...f, [field]: val }))
 
@@ -457,15 +581,22 @@ const NewListing = () => {
             </label>
           </div>
 
-          {(!form.pickup_only || platforms.includes('ebay')) && (
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Shipping details</label>
-              <input style={styles.input} placeholder="e.g. Buyer pays USPS shipping, FedEx available"
-                value={form.shipping_policy} onChange={e => set('shipping_policy', e.target.value)} />
-            </div>
-          )}
+{(!form.pickup_only || platforms.includes('ebay')) && (
+  <div style={styles.formGroup}>
+    <label style={styles.label}>Shipping details</label>
+    <input style={styles.input} placeholder="e.g. Buyer pays USPS shipping, FedEx available"
+      value={form.shipping_policy} onChange={e => set('shipping_policy', e.target.value)} />
+  </div>
+)}
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+{platforms.includes('ebay') && (
+  <>
+    <div style={styles.divider} />
+    <EbayFields form={form} set={set} />
+  </>
+)}
+
+<div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
             <button style={styles.backBtn} onClick={() => setStep(2)}>← Back</button>
             <button style={{ ...styles.btn, flex: 1, opacity: !form.price ? 0.5 : 1 }}
               disabled={!form.price} onClick={() => { setError(''); setStep(4) }}>
@@ -493,9 +624,16 @@ const NewListing = () => {
             {category === 'vehicles' && form.year && (
               <div style={styles.reviewRow}><span style={styles.reviewKey}>Vehicle</span><span style={styles.reviewVal}>{form.year} {form.make} {form.model} {form.trim}</span></div>
             )}
-            {category === 'electronics' && form.brand && (
-              <div style={styles.reviewRow}><span style={styles.reviewKey}>Device</span><span style={styles.reviewVal}>{form.brand} {form.model} {form.storage}</span></div>
-            )}
+{category === 'electronics' && form.brand && (
+  <div style={styles.reviewRow}><span style={styles.reviewKey}>Device</span><span style={styles.reviewVal}>{form.brand} {form.model} {form.storage}</span></div>
+)}
+{platforms.includes('ebay') && (
+  <>
+    <div style={styles.reviewRow}><span style={styles.reviewKey}>eBay Type</span><span style={styles.reviewVal}>{form.ebayListingType} · {form.ebayDuration}</span></div>
+    <div style={styles.reviewRow}><span style={styles.reviewKey}>Shipping</span><span style={styles.reviewVal}>{form.ebayShipping}{form.ebayShippingCost ? ` · $${form.ebayShippingCost}` : ''}</span></div>
+    <div style={styles.reviewRow}><span style={styles.reviewKey}>Returns</span><span style={styles.reviewVal}>{form.ebayReturns}</span></div>
+  </>
+)}
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
