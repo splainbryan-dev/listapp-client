@@ -3,9 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
 const HubAdsLogo = () => (
-  <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-    <span style={{ color: '#fff', fontWeight: '700', fontSize: '36px', letterSpacing: '-0.02em' }}>Hub</span>
-    <span style={{ fontWeight: '800', fontSize: '36px', letterSpacing: '-0.02em', background: 'linear-gradient(90deg, #a78bfa, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Ads</span>
+  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+    <img src="/hubadslogo.png" alt="HubAds" style={{ width: '200px', objectFit: 'contain' }} />
   </div>
 )
 
@@ -52,12 +51,9 @@ const Login = () => {
         transform: mounted ? 'translateY(0)' : 'translateY(24px)',
         transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)'
       }}>
-        
         <HubAdsLogo />
-
         <h1 style={styles.title}>Welcome back</h1>
         <p style={styles.sub}>Sign in to your account</p>
-
         <div style={styles.oauthGroup}>
           <button style={styles.oauthBtn} onClick={() => handleOAuth('Google')}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -81,15 +77,12 @@ const Login = () => {
             Continue with X
           </button>
         </div>
-
         <div style={styles.divider}>
           <div style={styles.dividerLine} />
           <span style={styles.dividerText}>or</span>
           <div style={styles.dividerLine} />
         </div>
-
         {error && <div style={styles.error}>{error}</div>}
-
         <form onSubmit={handleSubmit}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Email</label>
@@ -105,7 +98,6 @@ const Login = () => {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
         <div style={styles.footer}>
           Don't have an account? <Link to="/register" style={styles.link}>Sign up</Link>
         </div>
@@ -117,10 +109,6 @@ const Login = () => {
 const styles = {
   page: { minHeight: '100vh', background: 'linear-gradient(135deg, #080818 0%, #0f0f2a 50%, #080818 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: "'DM Sans', -apple-system, sans-serif" },
   card: { background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', padding: '40px 36px', width: '100%', maxWidth: '420px', boxShadow: '0 32px 64px rgba(0,0,0,0.5)' },
-  logoWrap: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', justifyContent: 'center' },
-  brandName: { display: 'flex', alignItems: 'baseline' },
-  hub: { color: '#fff', fontWeight: '800', fontSize: '26px', letterSpacing: '-0.5px' },
-  ads: { fontWeight: '800', fontSize: '26px', letterSpacing: '-0.5px', background: 'linear-gradient(90deg, #a78bfa, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
   title: { color: '#fff', fontSize: '24px', fontWeight: '700', textAlign: 'center', marginBottom: '6px', letterSpacing: '-0.5px' },
   sub: { color: 'rgba(255,255,255,0.4)', fontSize: '14px', textAlign: 'center', marginBottom: '24px' },
   oauthGroup: { display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' },

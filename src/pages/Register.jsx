@@ -3,9 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
 const HubAdsLogo = () => (
-  <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-    <span style={{ color: '#fff', fontWeight: '700', fontSize: '36px', letterSpacing: '-0.02em' }}>Hub</span>
-    <span style={{ fontWeight: '800', fontSize: '36px', letterSpacing: '-0.02em', background: 'linear-gradient(90deg, #a78bfa, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Ads</span>
+  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+    <img src="/hubadslogo.png" alt="HubAds" style={{ width: '200px', objectFit: 'contain' }} />
   </div>
 )
 
