@@ -12,11 +12,7 @@ const Navbar = () => {
   return (
     <nav style={styles.nav}>
       <Link to="/" style={styles.brand}>
-        <img src="/hubads-logo.jpg" alt="HubAds" style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '8px' }} />
-        <div style={styles.brandName}>
-          <span style={styles.hub}>Hub</span>
-          <span style={styles.ads}>Ads</span>
-        </div>
+        <img src="/hubads-icon.png" alt="HubAds" style={{ height: '36px', width: '36px', objectFit: 'contain' }} />
       </Link>
       <div style={styles.links}>
         {token ? (
@@ -39,10 +35,7 @@ const Navbar = () => {
 
 const styles = {
   nav: { background: '#fff', borderBottom: '1px solid #e5e5e5', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, fontFamily: "'DM Sans', -apple-system, sans-serif" },
-  brand: { textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' },
-  brandName: { display: 'flex', alignItems: 'baseline', gap: '1px' },
-  hub: { color: '#111', fontWeight: '800', fontSize: '18px', letterSpacing: '-0.3px' },
-  ads: { fontWeight: '800', fontSize: '18px', letterSpacing: '-0.3px', background: 'linear-gradient(90deg, #7B2FFF, #06B6D4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+  brand: { textDecoration: 'none', display: 'flex', alignItems: 'center' },
   links: { display: 'flex', gap: '16px', alignItems: 'center' },
   link: { textDecoration: 'none', color: '#555', fontSize: '14px' },
   newBtn: { textDecoration: 'none', color: '#7B2FFF', fontSize: '14px', fontWeight: '600' },
