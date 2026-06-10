@@ -1,39 +1,18 @@
 import { Link, useNavigate } from 'react-router-dom'
 
-const HubAdsIcon = ({ size = 32 }) => (
-  <svg width={size} height={size} viewBox="0 0 72 72" fill="none">
-    <defs>
-      <linearGradient id="navGrad" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="#7B2FFF"/>
-        <stop offset="100%" stopColor="#06B6D4"/>
-      </linearGradient>
-    </defs>
-    <rect width="72" height="72" rx="18" fill="url(#navGrad)"/>
-    <circle cx="20" cy="20" r="7" fill="white"/>
-    <circle cx="20" cy="52" r="7" fill="white"/>
-    <circle cx="52" cy="20" r="7" fill="white"/>
-    <circle cx="52" cy="52" r="7" fill="white"/>
-    <rect x="16" y="26" width="8" height="20" rx="4" fill="white"/>
-    <rect x="48" y="26" width="8" height="20" rx="4" fill="white"/>
-    <rect x="24" y="32" width="24" height="8" rx="4" fill="white"/>
-  </svg>
-)
-
 const Navbar = () => {
   const navigate = useNavigate()
   const token = localStorage.getItem('token')
   const user = JSON.parse(localStorage.getItem('user') || 'null')
-
   const logout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     navigate('/login')
   }
-
   return (
     <nav style={styles.nav}>
       <Link to="/" style={styles.brand}>
-        <HubAdsIcon size={32} />
+        <img src="/hubads-logo.jpg" alt="HubAds" style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '8px' }} />
         <div style={styles.brandName}>
           <span style={styles.hub}>Hub</span>
           <span style={styles.ads}>Ads</span>

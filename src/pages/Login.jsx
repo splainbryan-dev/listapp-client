@@ -6,7 +6,7 @@ const HubAdsLogo = () => (
   <img
     src="/hubads-logo.jpg"
     alt="HubAds"
-    style={{ width: '52px', height: '52px', objectFit: 'contain', borderRadius: '14px' }}
+    style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '14px' }}
   />
 )
 
