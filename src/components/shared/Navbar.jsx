@@ -12,7 +12,7 @@ const Navbar = () => {
   return (
     <nav style={styles.nav}>
       <Link to="/" style={styles.brand}>
-        <img src="/hubads-icon.png" alt="HubAds" style={{ height: '36px', width: '36px', objectFit: 'contain' }} />
+        <img src="/hubads-icon.png" alt="HubAds" style={{ height: '80px', width: '80px', objectFit: 'contain' }} />
       </Link>
       <div style={styles.links}>
         {token ? (

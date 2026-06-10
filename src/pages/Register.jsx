@@ -3,11 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
 const HubAdsLogo = () => (
-  <img
-    src="/hubads-logo.jpg"
-    alt="HubAds"
-    style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '14px' }}
-  />
+  <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+    <span style={{ color: '#fff', fontWeight: '700', fontSize: '36px', letterSpacing: '-0.02em' }}>Hub</span>
+    <span style={{ fontWeight: '800', fontSize: '36px', letterSpacing: '-0.02em', background: 'linear-gradient(90deg, #a78bfa, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Ads</span>
+  </div>
 )
 
 const Register = () => {
@@ -84,13 +83,8 @@ const Register = () => {
         transform: mounted ? 'translateY(0)' : 'translateY(24px)',
         transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)'
       }}>
-        <div style={styles.logoWrap}>
-          <HubAdsLogo />
-          <div style={styles.brandName}>
-            <span style={styles.hub}>Hub</span>
-            <span style={styles.ads}>Ads</span>
-          </div>
-        </div>
+        
+        <HubAdsLogo />
 
         <h1 style={styles.title}>Create account</h1>
         <p style={styles.sub}>Start selling smarter today</p>
