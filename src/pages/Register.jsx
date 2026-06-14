@@ -64,9 +64,9 @@ const Register = () => {
 
   const handleOAuth = (provider) => {
     if (provider === 'Google') {
-      window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`
+    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`
     } else if (provider === 'X') {
-      window.location.href = `${import.meta.env.VITE_API_URL}/auth/x`
+    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/x`
     } else {
       alert(`${provider} login coming soon!`)
     }

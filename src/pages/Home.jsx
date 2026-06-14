@@ -16,14 +16,22 @@ const Home = () => {
 
   if (!token) {
     return (
-      <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-        <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 12 }}>Post once. Sell everywhere.</h1>
-        <p style={{ color: '#666', fontSize: 16, marginBottom: 32, maxWidth: 480, margin: '0 auto 32px' }}>
+      <div style={{ textAlign: 'center', padding: '120px 20px' }}>
+        <h1 style={{ fontSize: 40, fontWeight: 800, marginBottom: 16, color: '#fff', letterSpacing: '-0.5px' }}>Post once. Sell everywhere.</h1>
+        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 17, maxWidth: 480, margin: '0 auto 40px', lineHeight: 1.6 }}>
           Create one listing and we generate platform-ready drafts for Facebook, eBay, OfferUp, and Craigslist. Fix issues in seconds, not hours.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <Link to="/register"><button className="btn btn-primary">Get Started Free</button></Link>
-          <Link to="/login"><button className="btn btn-secondary">Sign In</button></Link>
+          <Link to="/register">
+            <button style={{ padding: '14px 28px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #7B2FFF, #06B6D4)', color: '#fff', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
+              Get Started Free
+            </button>
+          </Link>
+          <Link to="/login">
+            <button style={{ padding: '14px 28px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
+              Sign In
+            </button>
+          </Link>
         </div>
       </div>
     )
@@ -37,7 +45,6 @@ const Home = () => {
         <h1 className="page-title" style={{ margin: 0 }}>My Listings</h1>
         <button className="btn btn-primary" onClick={() => navigate('/listing/new')}>+ New Listing</button>
       </div>
-
       {listings.length === 0 ? (
         <div className="empty-state">
           <h3>No listings yet</h3>

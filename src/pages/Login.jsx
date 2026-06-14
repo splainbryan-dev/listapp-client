@@ -4,7 +4,7 @@ import api from '../services/api'
 
 const HubAdsLogo = () => (
   <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-    <img src="/hubads-logo.png" alt="HubAds" style={{ width: '280px', objectFit: 'contain' }} />
+    <img src="/hubads-icon.png" alt="HubAds" style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '20px' }} />
   </div>
 )
 
@@ -35,9 +35,9 @@ const Login = () => {
 
   const handleOAuth = (provider) => {
     if (provider === 'Google') {
-      window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`
+      window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`
     } else if (provider === 'X') {
-      window.location.href = `${import.meta.env.VITE_API_URL}/auth/x`
+      window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/x`
     } else {
       alert(`${provider} login coming soon!`)
     }
