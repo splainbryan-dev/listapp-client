@@ -4,7 +4,7 @@ import api from '../services/api'
 
 const HubAdsLogo = () => (
   <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-    <img src="/hubads-icon.png" alt="HubAds" style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '20px' }} />
+    <img src="/hubads-logo.png" alt="HubAds" style={{ width: '220px', objectFit: 'contain' }} />
   </div>
 )
 
