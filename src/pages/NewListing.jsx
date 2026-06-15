@@ -19,6 +19,7 @@ const PLATFORMS = [
   { id: 'facebook', label: 'Facebook Marketplace', icon: '📘' },
   { id: 'craigslist', label: 'Craigslist', icon: '📋' },
   { id: 'offerup', label: 'OfferUp', icon: '🟢' },
+  { id: 'nextdoor', label: 'Nextdoor', icon: '🏘️' },
   { id: 'ebay', label: 'eBay', icon: '🛒' },
 ]
 

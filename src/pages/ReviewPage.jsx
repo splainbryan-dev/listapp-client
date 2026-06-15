@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import StatusBadge from '../components/dashboard/StatusBadge'
 
-const PLATFORM_LABELS = { facebook: 'Facebook Marketplace', ebay: 'eBay', offerup: 'OfferUp', craigslist: 'Craigslist' }
+const PLATFORM_LABELS = { facebook: 'Facebook Marketplace', ebay: 'eBay', offerup: 'OfferUp', craigslist: 'Craigslist', nextdoor: '🏘️ Nextdoor', }
 
 const ReviewPage = () => {
   const { listingId } = useParams()
