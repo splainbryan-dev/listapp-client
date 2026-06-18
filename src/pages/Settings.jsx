@@ -2,24 +2,41 @@ import { useState, useEffect } from 'react'
 import api from '../services/api'
 
 const ALL_PLATFORMS = [
-  { id: 'facebook', label: 'Facebook Marketplace', icon: '📘', note: 'Auto-filled via browser extension' },
-  { id: 'ebay', label: 'eBay', icon: '🛒', note: 'Direct API posting — connect your account', fieldLabel: 'eBay username' },
-  { id: 'offerup', label: 'OfferUp', icon: '🟢', note: 'Auto-filled via browser extension' },
-  { id: 'craigslist', label: 'Craigslist', icon: '📋', note: 'Auto-filled via browser extension', fieldLabel: 'Email address' },
-  { id: 'nextdoor', label: 'Nextdoor', icon: '🏘️', note: 'Auto-filled via browser extension' },
+  { id: 'facebook', label: 'Facebook Marketplace', icon: '📘', note: 'Auto-filled via browser extension', oauth: false },
+  { id: 'ebay', label: 'eBay', icon: '🛒', note: 'Securely sign in with your eBay account', oauth: true },
+  { id: 'offerup', label: 'OfferUp', icon: '🟢', note: 'Auto-filled via browser extension', oauth: false },
+  { id: 'craigslist', label: 'Craigslist', icon: '📋', note: 'Auto-filled via browser extension', oauth: false },
+  { id: 'nextdoor', label: 'Nextdoor', icon: '🏘️', note: 'Auto-filled via browser extension', oauth: false },
 ]
 
 const Settings = () => {
   const [connected, setConnected] = useState([])
   const [connecting, setConnecting] = useState(null)
   const [inputs, setInputs] = useState({})
-  const [success, setSuccess] = useState('')
+  const [message, setMessage] = useState('')
 
   useEffect(() => {
     api.get('/platforms').then(res => setConnected(res.data)).catch(() => {})
+
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('success') === 'ebay_connected') {
+      setMessage('eBay connected successfully!')
+      window.history.replaceState({}, '', '/settings')
+    } else if (params.get('error') === 'ebay_failed') {
+      setMessage('eBay connection failed — please try again')
+      window.history.replaceState({}, '', '/settings')
+    } else if (params.get('error') === 'ebay_cancelled') {
+      setMessage('eBay connection cancelled')
+      window.history.replaceState({}, '', '/settings')
+    }
   }, [])
 
   const isConnected = (id) => connected.find(p => p.platform === id && p.connected)
+
+  const connectEbay = () => {
+    const token = localStorage.getItem('token')
+    window.location.href = `${import.meta.env.VITE_API_URL}/api/ebay-auth/connect?token=${token}`
+  }
 
   const saveConnect = async (platformId) => {
     try {
@@ -34,10 +51,10 @@ const Settings = () => {
       })
       setConnecting(null)
       setInputs(prev => ({ ...prev, [platformId]: '' }))
-      setSuccess(`${platformId} connected!`)
-      setTimeout(() => setSuccess(''), 3000)
+      setMessage(`${platformId} connected!`)
+      setTimeout(() => setMessage(''), 3000)
     } catch {
-      setSuccess('Failed to save — try again')
+      setMessage('Failed to save — try again')
     }
   }
 
@@ -50,7 +67,7 @@ const Settings = () => {
     <div style={styles.page}>
       <h1 style={styles.pageTitle}>Settings</h1>
 
-      {success && <div style={styles.successBanner}>{success}</div>}
+      {message && <div style={styles.messageBanner}>{message}</div>}
 
       <div style={styles.card}>
         <h2 style={styles.cardTitle}>Connected Platforms</h2>
@@ -67,7 +84,6 @@ const Settings = () => {
                 <div>
                   <div style={styles.platformLabel}>{p.label}</div>
                   <div style={styles.platformNote}>{p.note}</div>
-                  {conn?.username && <div style={styles.platformConnected}>@{conn.username}</div>}
                 </div>
               </div>
 
@@ -77,11 +93,15 @@ const Settings = () => {
                     <span style={styles.connectedDot}>● Connected</span>
                     <button style={styles.disconnectBtn} onClick={() => disconnect(p.id)}>Disconnect</button>
                   </>
+                ) : p.oauth ? (
+                  <button style={styles.ebayConnectBtn} onClick={connectEbay}>
+                    🔒 Sign in with eBay
+                  </button>
                 ) : connecting === p.id ? (
                   <div style={styles.connectForm}>
                     <input
                       style={styles.input}
-                      placeholder={p.fieldLabel || 'Username'}
+                      placeholder="Username"
                       value={inputs[p.id] || ''}
                       onChange={e => setInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
                       onKeyDown={e => e.key === 'Enter' && saveConnect(p.id)}
@@ -91,9 +111,7 @@ const Settings = () => {
                     <button style={styles.cancelBtn} onClick={() => setConnecting(null)}>✕</button>
                   </div>
                 ) : (
-                  <button style={styles.connectBtn} onClick={() => setConnecting(p.id)}>
-                    {p.id === 'ebay' ? 'Connect eBay' : 'Connect'}
-                  </button>
+                  <button style={styles.connectBtn} onClick={() => setConnecting(p.id)}>Connect</button>
                 )}
               </div>
             </div>
@@ -113,7 +131,7 @@ const Settings = () => {
 const styles = {
   page: { maxWidth: 680, margin: '0 auto', padding: '40px 16px', fontFamily: "'DM Sans', -apple-system, sans-serif" },
   pageTitle: { color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 24 },
-  successBanner: { background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 10, padding: '12px 16px', fontSize: 14, marginBottom: 16 },
+  messageBanner: { background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 10, padding: '12px 16px', fontSize: 14, marginBottom: 16 },
   card: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '20px 24px', marginBottom: 16 },
   cardTitle: { color: '#fff', fontSize: 15, fontWeight: 700, marginBottom: 6 },
   cardSub: { color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 20 },
@@ -122,9 +140,9 @@ const styles = {
   platformIcon: { fontSize: 24, flexShrink: 0 },
   platformLabel: { color: '#fff', fontWeight: 600, fontSize: 14 },
   platformNote: { color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2 },
-  platformConnected: { color: '#a78bfa', fontSize: 12, marginTop: 2 },
   platformRight: { display: 'flex', alignItems: 'center', gap: 8 },
   connectBtn: { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
+  ebayConnectBtn: { background: 'linear-gradient(135deg, #0064D2, #0099E0)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
   disconnectBtn: { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
   connectedDot: { color: '#22c55e', fontSize: 12 },
   connectForm: { display: 'flex', gap: 6, alignItems: 'center' },
