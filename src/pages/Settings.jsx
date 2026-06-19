@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
 const ALL_PLATFORMS = [
@@ -14,28 +14,72 @@ const Settings = () => {
   const [connecting, setConnecting] = useState(null)
   const [inputs, setInputs] = useState({})
   const [message, setMessage] = useState('')
+  const [ebayConnecting, setEbayConnecting] = useState(false)
+  const pollRef = useRef(null)
+  const popupRef = useRef(null)
 
   useEffect(() => {
     api.get('/platforms').then(res => setConnected(res.data)).catch(() => {})
+  }, [])
 
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('success') === 'ebay_connected') {
-      setMessage('eBay connected successfully!')
-      window.history.replaceState({}, '', '/settings')
-    } else if (params.get('error') === 'ebay_failed') {
-      setMessage('eBay connection failed — please try again')
-      window.history.replaceState({}, '', '/settings')
-    } else if (params.get('error') === 'ebay_cancelled') {
-      setMessage('eBay connection cancelled')
-      window.history.replaceState({}, '', '/settings')
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
     }
   }, [])
 
   const isConnected = (id) => connected.find(p => p.platform === id && p.connected)
 
+  const showMessage = (msg, isError = false) => {
+    setMessage({ text: msg, error: isError })
+    setTimeout(() => setMessage(''), 4000)
+  }
+
   const connectEbay = () => {
     const token = localStorage.getItem('token')
-    window.location.href = `${import.meta.env.VITE_API_URL}/api/ebay-auth/connect?token=${token}`
+    const url = `${import.meta.env.VITE_API_URL}/api/ebay-auth/connect?token=${token}`
+
+    // Open popup
+    const width = 600
+    const height = 700
+    const left = window.screenX + (window.outerWidth - width) / 2
+    const top = window.screenY + (window.outerHeight - height) / 2
+    const popup = window.open(url, 'ebay_oauth', `width=${width},height=${height},left=${left},top=${top}`)
+    popupRef.current = popup
+    setEbayConnecting(true)
+
+    // Poll for connection every 2 seconds
+    pollRef.current = setInterval(async () => {
+      // Check if popup was closed manually
+      if (popup && popup.closed) {
+        clearInterval(pollRef.current)
+        setEbayConnecting(false)
+        return
+      }
+
+      try {
+        const res = await api.get('/platforms')
+        const ebay = res.data.find(p => p.platform === 'ebay' && p.connected)
+        if (ebay) {
+          clearInterval(pollRef.current)
+          setConnected(res.data)
+          setEbayConnecting(false)
+          if (popup && !popup.closed) popup.close()
+          showMessage('eBay connected successfully!')
+        }
+      } catch {
+        // ignore poll errors
+      }
+    }, 2000)
+
+    // Stop polling after 3 minutes regardless
+    setTimeout(() => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        setEbayConnecting(false)
+      }
+    }, 180000)
   }
 
   const saveConnect = async (platformId) => {
@@ -51,10 +95,9 @@ const Settings = () => {
       })
       setConnecting(null)
       setInputs(prev => ({ ...prev, [platformId]: '' }))
-      setMessage(`${platformId} connected!`)
-      setTimeout(() => setMessage(''), 3000)
+      showMessage(`${platformId} connected!`)
     } catch {
-      setMessage('Failed to save — try again')
+      showMessage('Failed to save — try again', true)
     }
   }
 
@@ -67,7 +110,11 @@ const Settings = () => {
     <div style={styles.page}>
       <h1 style={styles.pageTitle}>Settings</h1>
 
-      {message && <div style={styles.messageBanner}>{message}</div>}
+      {message && (
+        <div style={{ ...styles.messageBanner, ...(message.error ? styles.messageBannerError : {}) }}>
+          {message.text}
+        </div>
+      )}
 
       <div style={styles.card}>
         <h2 style={styles.cardTitle}>Connected Platforms</h2>
@@ -94,8 +141,12 @@ const Settings = () => {
                     <button style={styles.disconnectBtn} onClick={() => disconnect(p.id)}>Disconnect</button>
                   </>
                 ) : p.oauth ? (
-                  <button style={styles.ebayConnectBtn} onClick={connectEbay}>
-                    🔒 Sign in with eBay
+                  <button
+                    style={{ ...styles.ebayConnectBtn, opacity: ebayConnecting ? 0.6 : 1 }}
+                    onClick={connectEbay}
+                    disabled={ebayConnecting}
+                  >
+                    {ebayConnecting ? '⏳ Connecting...' : '🔒 Sign in with eBay'}
                   </button>
                 ) : connecting === p.id ? (
                   <div style={styles.connectForm}>
@@ -119,6 +170,17 @@ const Settings = () => {
         })}
       </div>
 
+      {ebayConnecting && (
+        <div style={styles.pollingBanner}>
+          <span style={styles.spinner}>⏳</span> Waiting for eBay authorization… Complete sign-in in the popup window.
+          <button style={styles.cancelPollBtn} onClick={() => {
+            clearInterval(pollRef.current)
+            setEbayConnecting(false)
+            if (popupRef.current && !popupRef.current.closed) popupRef.current.close()
+          }}>Cancel</button>
+        </div>
+      )}
+
       <div style={styles.card}>
         <h2 style={styles.cardTitle}>Browser Extension</h2>
         <p style={styles.cardSub}>Install the HubAds extension to auto-fill Facebook, Craigslist, OfferUp and Nextdoor with one click. Works on Chrome, Edge, Brave, and Firefox.</p>
@@ -132,6 +194,10 @@ const styles = {
   page: { maxWidth: 680, margin: '0 auto', padding: '40px 16px', fontFamily: "'DM Sans', -apple-system, sans-serif" },
   pageTitle: { color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 24 },
   messageBanner: { background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 10, padding: '12px 16px', fontSize: 14, marginBottom: 16 },
+  messageBannerError: { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' },
+  pollingBanner: { display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', color: 'rgba(255,255,255,0.8)', borderRadius: 10, padding: '12px 16px', fontSize: 13, marginBottom: 16 },
+  spinner: { fontSize: 16 },
+  cancelPollBtn: { marginLeft: 'auto', background: 'none', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.5)', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' },
   card: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '20px 24px', marginBottom: 16 },
   cardTitle: { color: '#fff', fontSize: 15, fontWeight: 700, marginBottom: 6 },
   cardSub: { color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 20 },
@@ -142,7 +208,7 @@ const styles = {
   platformNote: { color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2 },
   platformRight: { display: 'flex', alignItems: 'center', gap: 8 },
   connectBtn: { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
-  ebayConnectBtn: { background: 'linear-gradient(135deg, #0064D2, #0099E0)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  ebayConnectBtn: { background: 'linear-gradient(135deg, #0064D2, #0099E0)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s' },
   disconnectBtn: { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
   connectedDot: { color: '#22c55e', fontSize: 12 },
   connectForm: { display: 'flex', gap: 6, alignItems: 'center' },
