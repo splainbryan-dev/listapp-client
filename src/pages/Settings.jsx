@@ -25,9 +25,7 @@ const Settings = () => {
   }, [])
 
   useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current)
-    }
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [])
 
   const isConnected = (id) => connected.find(p => p.platform === id && p.connected)
@@ -41,33 +39,44 @@ const Settings = () => {
     const token = localStorage.getItem('token')
     const url = `${import.meta.env.VITE_API_URL}/api/ebay-auth/connect?token=${token}`
 
-    const width = 600
-    const height = 700
+    const width = 600, height = 700
     const left = window.screenX + (window.outerWidth - width) / 2
     const top = window.screenY + (window.outerHeight - height) / 2
     const popup = window.open(url, 'ebay_oauth', `width=${width},height=${height},left=${left},top=${top}`)
     popupRef.current = popup
     setEbayConnecting(true)
 
-    pollRef.current = setInterval(async () => {
-      if (popup && popup.closed) {
-        clearInterval(pollRef.current)
-        setEbayConnecting(false)
-        return
-      }
+    pollRef.current = setInterval(() => {
       try {
-        const res = await api.get('/api/ebay-auth/status')
-        if (res.data.connected) {
+        if (popup && popup.closed) {
           clearInterval(pollRef.current)
-          setConnected([{ platform: 'ebay', connected: true }])
           setEbayConnecting(false)
-          if (popup && !popup.closed) popup.close()
-          showMessage('eBay connected successfully!')
+          return
+        }
+        // Try to read popup URL — throws cross-origin error while on eBay's domain
+        const popupUrl = popup.location.href
+        if (popupUrl && popupUrl.includes('code=')) {
+          const urlParams = new URLSearchParams(new URL(popupUrl).search)
+          const code = urlParams.get('code')
+          if (code) {
+            clearInterval(pollRef.current)
+            popup.close()
+            api.post('/api/ebay-auth/exchange', { code })
+              .then(() => {
+                setConnected([{ platform: 'ebay', connected: true }])
+                setEbayConnecting(false)
+                showMessage('eBay connected successfully!')
+              })
+              .catch(() => {
+                setEbayConnecting(false)
+                showMessage('eBay connection failed — try again', true)
+              })
+          }
         }
       } catch {
-        // ignore poll errors
+        // Cross-origin error — popup is still on eBay's domain, keep polling
       }
-    }, 2000)
+    }, 500)
 
     setTimeout(() => {
       if (pollRef.current) {
@@ -118,7 +127,6 @@ const Settings = () => {
         {ALL_PLATFORMS.map((p, i) => {
           const conn = isConnected(p.id)
           const isLast = i === ALL_PLATFORMS.length - 1
-
           return (
             <div key={p.id} style={{ ...styles.platformRow, borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
               <div style={styles.platformLeft}>
@@ -128,7 +136,6 @@ const Settings = () => {
                   <div style={styles.platformNote}>{p.note}</div>
                 </div>
               </div>
-
               <div style={styles.platformRight}>
                 {conn ? (
                   <>
@@ -208,9 +215,4 @@ const styles = {
   connectedDot: { color: '#22c55e', fontSize: 12 },
   connectForm: { display: 'flex', gap: 6, alignItems: 'center' },
   input: { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 13, fontFamily: 'inherit', outline: 'none', width: 160 },
-  saveBtn: { background: 'linear-gradient(135deg, #7B2FFF, #06B6D4)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
-  cancelBtn: { background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 16, cursor: 'pointer', padding: '4px 8px' },
-  extensionBtn: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.3)', borderRadius: 10, padding: '12px 20px', fontSize: 14, cursor: 'not-allowed', fontFamily: 'inherit', width: '100%' },
-}
-
-export default Settings
+  saveBtn: { background: 'linear-gradient(135deg, #7B2FFF, #06B6D4)', color: '#ff
