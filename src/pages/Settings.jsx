@@ -19,10 +19,11 @@ const Settings = () => {
   const popupRef = useRef(null)
 
   useEffect(() => {
-    api.get('/platforms').then(res => setConnected(res.data)).catch(() => {})
+    api.get('/api/ebay-auth/status').then(res => {
+      if (res.data.connected) setConnected([{ platform: 'ebay', connected: true }])
+    }).catch(() => {})
   }, [])
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current)
@@ -40,7 +41,6 @@ const Settings = () => {
     const token = localStorage.getItem('token')
     const url = `${import.meta.env.VITE_API_URL}/api/ebay-auth/connect?token=${token}`
 
-    // Open popup
     const width = 600
     const height = 700
     const left = window.screenX + (window.outerWidth - width) / 2
@@ -49,21 +49,17 @@ const Settings = () => {
     popupRef.current = popup
     setEbayConnecting(true)
 
-    // Poll for connection every 2 seconds
     pollRef.current = setInterval(async () => {
-      // Check if popup was closed manually
       if (popup && popup.closed) {
         clearInterval(pollRef.current)
         setEbayConnecting(false)
         return
       }
-
       try {
-        const res = await api.get('/platforms')
-        const ebay = res.data.find(p => p.platform === 'ebay' && p.connected)
-        if (ebay) {
+        const res = await api.get('/api/ebay-auth/status')
+        if (res.data.connected) {
           clearInterval(pollRef.current)
-          setConnected(res.data)
+          setConnected([{ platform: 'ebay', connected: true }])
           setEbayConnecting(false)
           if (popup && !popup.closed) popup.close()
           showMessage('eBay connected successfully!')
@@ -73,7 +69,6 @@ const Settings = () => {
       }
     }, 2000)
 
-    // Stop polling after 3 minutes regardless
     setTimeout(() => {
       if (pollRef.current) {
         clearInterval(pollRef.current)
