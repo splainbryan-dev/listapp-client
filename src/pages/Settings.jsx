@@ -15,6 +15,7 @@ const Settings = () => {
   const [inputs, setInputs] = useState({})
   const [message, setMessage] = useState('')
   const [ebayConnecting, setEbayConnecting] = useState(false)
+  const [ebayError, setEbayError] = useState(false)
   const pollRef = useRef(null)
   const popupRef = useRef(null)
 
@@ -32,10 +33,11 @@ const Settings = () => {
 
   const showMessage = (msg, isError = false) => {
     setMessage({ text: msg, error: isError })
-    setTimeout(() => setMessage(''), 4000)
+    setTimeout(() => setMessage(''), 5000)
   }
 
   const connectEbay = () => {
+    setEbayError(false)
     const token = localStorage.getItem('token')
     const url = `${import.meta.env.VITE_API_URL}/api/ebay-auth/connect?token=${token}`
 
@@ -53,8 +55,16 @@ const Settings = () => {
           setEbayConnecting(false)
           return
         }
-        // Try to read popup URL — throws cross-origin error while on eBay's domain
         const popupUrl = popup.location.href
+        if (popupUrl && popupUrl.includes('error=')) {
+          // eBay returned an error in the redirect URL
+          clearInterval(pollRef.current)
+          popup.close()
+          setEbayConnecting(false)
+          setEbayError(true)
+          showMessage('eBay authorization failed — tap "Retry Connect" to try again.', true)
+          return
+        }
         if (popupUrl && popupUrl.includes('code=')) {
           const urlParams = new URLSearchParams(new URL(popupUrl).search)
           const code = urlParams.get('code')
@@ -65,16 +75,18 @@ const Settings = () => {
               .then(() => {
                 setConnected([{ platform: 'ebay', connected: true }])
                 setEbayConnecting(false)
+                setEbayError(false)
                 showMessage('eBay connected successfully!')
               })
               .catch(() => {
                 setEbayConnecting(false)
-                showMessage('eBay connection failed — try again', true)
+                setEbayError(true)
+                showMessage('eBay connection failed — tap "Retry Connect" to try again.', true)
               })
           }
         }
       } catch {
-        // Cross-origin error — popup is still on eBay's domain, keep polling
+        // Cross-origin — popup still on eBay's domain, keep polling
       }
     }, 500)
 
@@ -108,6 +120,18 @@ const Settings = () => {
   const disconnect = async (platformId) => {
     await api.patch(`/platforms/disconnect/${platformId}`)
     setConnected(prev => prev.map(p => p.platform === platformId ? { ...p, connected: false } : p))
+  }
+
+  const ebayButtonStyle = () => {
+    if (ebayConnecting) return { ...styles.ebayConnectBtn, opacity: 0.6 }
+    if (ebayError) return styles.ebayRetryBtn
+    return styles.ebayConnectBtn
+  }
+
+  const ebayButtonLabel = () => {
+    if (ebayConnecting) return '⏳ Connecting...'
+    if (ebayError) return '⚠ Retry Connect'
+    return '🔒 Sign in with eBay'
   }
 
   return (
@@ -144,11 +168,11 @@ const Settings = () => {
                   </>
                 ) : p.oauth ? (
                   <button
-                    style={{ ...styles.ebayConnectBtn, opacity: ebayConnecting ? 0.6 : 1 }}
+                    style={ebayButtonStyle()}
                     onClick={connectEbay}
                     disabled={ebayConnecting}
                   >
-                    {ebayConnecting ? '⏳ Connecting...' : '🔒 Sign in with eBay'}
+                    {ebayButtonLabel()}
                   </button>
                 ) : connecting === p.id ? (
                   <div style={styles.connectForm}>
@@ -211,8 +235,14 @@ const styles = {
   platformRight: { display: 'flex', alignItems: 'center', gap: 8 },
   connectBtn: { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
   ebayConnectBtn: { background: 'linear-gradient(135deg, #0064D2, #0099E0)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s' },
+  ebayRetryBtn: { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s' },
   disconnectBtn: { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
   connectedDot: { color: '#22c55e', fontSize: 12 },
   connectForm: { display: 'flex', gap: 6, alignItems: 'center' },
   input: { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 13, fontFamily: 'inherit', outline: 'none', width: 160 },
-  saveBtn: { background: 'linear-gradient(135deg, #7B2FFF, #06B6D4)', color: '#ff
+  saveBtn: { background: 'linear-gradient(135deg, #7B2FFF, #06B6D4)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  cancelBtn: { background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)', borderRadius: 8, padding: '7px 10px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
+  extensionBtn: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.3)', borderRadius: 8, padding: '10px 18px', fontSize: 13, cursor: 'not-allowed', fontFamily: 'inherit' },
+}
+
+export default Settings
