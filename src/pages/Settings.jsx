@@ -2,45 +2,113 @@ import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
 const ALL_PLATFORMS = [
-  { id: 'facebook', label: 'Facebook Marketplace', icon: '📘', note: 'Auto-filled via browser extension', oauth: false },
-  { id: 'ebay', label: 'eBay', icon: '🛒', note: 'Securely sign in with your eBay account', oauth: true },
-  { id: 'offerup', label: 'OfferUp', icon: '🟢', note: 'Auto-filled via browser extension', oauth: false },
-  { id: 'craigslist', label: 'Craigslist', icon: '📋', note: 'Auto-filled via browser extension', oauth: false },
-  { id: 'nextdoor', label: 'Nextdoor', icon: '🏘️', note: 'Auto-filled via browser extension', oauth: false },
+  { id: 'facebook', label: 'Facebook Marketplace', icon: '📘', loginUrl: 'https://www.facebook.com/login' },
+  { id: 'ebay', label: 'eBay', icon: '🛒', loginUrl: null, oauth: true },
+  { id: 'offerup', label: 'OfferUp', icon: '🟢', loginUrl: 'https://offerup.com/login' },
+  { id: 'craigslist', label: 'Craigslist', icon: '📋', loginUrl: 'https://accounts.craigslist.org/login' },
+  { id: 'nextdoor', label: 'Nextdoor', icon: '🏘️', loginUrl: 'https://nextdoor.com/login' },
 ]
 
+const PLATFORM_NOTES = {
+  facebook: 'Sign in to your Facebook account to enable posting',
+  ebay: 'Securely sign in with your eBay account',
+  offerup: 'Sign in to your OfferUp account to enable posting',
+  craigslist: 'Sign in to your Craigslist account to enable posting',
+  nextdoor: 'Sign in to your Nextdoor account to enable posting',
+}
+
 const Settings = () => {
-  const [connected, setConnected] = useState([])
-  const [connecting, setConnecting] = useState(null)
-  const [inputs, setInputs] = useState({})
+  const [connected, setConnected] = useState({})
   const [message, setMessage] = useState('')
   const [ebayConnecting, setEbayConnecting] = useState(false)
   const [ebayError, setEbayError] = useState(false)
+  const [extensionInstalled, setExtensionInstalled] = useState(false)
   const pollRef = useRef(null)
   const popupRef = useRef(null)
 
   useEffect(() => {
+    // Check if extension is installed
+    const handler = () => setExtensionInstalled(true)
+    window.addEventListener('hubads-extension-ready', handler)
+
+    // Check eBay connection status
     api.get('/api/ebay-auth/status').then(res => {
-      if (res.data.connected) setConnected([{ platform: 'ebay', connected: true }])
+      if (res.data.connected) {
+        setConnected(prev => ({ ...prev, ebay: true }))
+      }
     }).catch(() => {})
-  }, [])
 
-  useEffect(() => {
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [])
+    // Check other platform login status via extension
+    if (extensionInstalled) {
+      ALL_PLATFORMS.filter(p => !p.oauth).forEach(p => {
+        window.dispatchEvent(new CustomEvent('hubads-check-login', { detail: { platform: p.id } }))
+      })
+    }
 
-  const isConnected = (id) => connected.find(p => p.platform === id && p.connected)
+    // Listen for login status responses from extension
+    const loginHandler = (e) => {
+      const { platform, loggedIn } = e.detail
+      if (loggedIn) setConnected(prev => ({ ...prev, [platform]: true }))
+    }
+    window.addEventListener('hubads-login-status', loginHandler)
+
+    return () => {
+      window.removeEventListener('hubads-extension-ready', handler)
+      window.removeEventListener('hubads-login-status', loginHandler)
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
+  }, [extensionInstalled])
 
   const showMessage = (msg, isError = false) => {
     setMessage({ text: msg, error: isError })
     setTimeout(() => setMessage(''), 5000)
   }
 
+  const connectPlatform = (platform) => {
+    if (!extensionInstalled) {
+      showMessage('Please install the HubAds extension first to connect platforms.', true)
+      return
+    }
+    const p = ALL_PLATFORMS.find(p => p.id === platform)
+    if (!p?.loginUrl) return
+
+    const width = 500, height = 650
+    const left = window.screenX + (window.outerWidth - width) / 2
+    const top = window.screenY + (window.outerHeight - height) / 2
+    const popup = window.open(p.loginUrl, `${platform}_login`, `width=${width},height=${height},left=${left},top=${top}`)
+    popupRef.current = popup
+
+    // Poll for login completion via extension
+    const poll = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(poll)
+        // Re-check login status after popup closes
+        window.dispatchEvent(new CustomEvent('hubads-check-login', { detail: { platform } }))
+        return
+      }
+    }, 500)
+  }
+
+  const disconnectPlatform = async (platformId) => {
+    if (platformId === 'ebay') {
+      try {
+        await api.patch(`/api/platforms/disconnect/${platformId}`)
+        setConnected(prev => ({ ...prev, ebay: false }))
+      } catch {
+        showMessage('Failed to disconnect eBay', true)
+      }
+    } else {
+      // For extension platforms just mark as disconnected locally
+      setConnected(prev => ({ ...prev, [platformId]: false }))
+      showMessage(`Disconnected from ${platformId}. You may also want to log out on the platform directly.`)
+    }
+  }
+
+  // eBay OAuth flow
   const connectEbay = () => {
     setEbayError(false)
     const token = localStorage.getItem('token')
     const url = `${import.meta.env.VITE_API_URL}/api/ebay-auth/connect?token=${token}`
-
     const width = 600, height = 700
     const left = window.screenX + (window.outerWidth - width) / 2
     const top = window.screenY + (window.outerHeight - height) / 2
@@ -57,7 +125,6 @@ const Settings = () => {
         }
         const popupUrl = popup.location.href
         if (popupUrl && popupUrl.includes('error=')) {
-          // eBay returned an error in the redirect URL
           clearInterval(pollRef.current)
           popup.close()
           setEbayConnecting(false)
@@ -65,29 +132,15 @@ const Settings = () => {
           showMessage('eBay authorization failed — tap "Retry Connect" to try again.', true)
           return
         }
-        if (popupUrl && popupUrl.includes('code=')) {
-          const urlParams = new URLSearchParams(new URL(popupUrl).search)
-          const code = urlParams.get('code')
-          if (code) {
-            clearInterval(pollRef.current)
-            popup.close()
-            api.post('/api/ebay-auth/exchange', { code })
-              .then(() => {
-                setConnected([{ platform: 'ebay', connected: true }])
-                setEbayConnecting(false)
-                setEbayError(false)
-                showMessage('eBay connected successfully!')
-              })
-              .catch(() => {
-                setEbayConnecting(false)
-                setEbayError(true)
-                showMessage('eBay connection failed — tap "Retry Connect" to try again.', true)
-              })
-          }
+        if (popupUrl && popupUrl.includes('success=true')) {
+          clearInterval(pollRef.current)
+          popup.close()
+          setConnected(prev => ({ ...prev, ebay: true }))
+          setEbayConnecting(false)
+          setEbayError(false)
+          showMessage('eBay connected successfully!')
         }
-      } catch {
-        // Cross-origin — popup still on eBay's domain, keep polling
-      }
+      } catch { }
     }, 500)
 
     setTimeout(() => {
@@ -96,42 +149,6 @@ const Settings = () => {
         setEbayConnecting(false)
       }
     }, 180000)
-  }
-
-  const saveConnect = async (platformId) => {
-    try {
-      const res = await api.post('/platforms/connect', {
-        platform: platformId,
-        username: inputs[platformId] || ''
-      })
-      setConnected(prev => {
-        const existing = prev.findIndex(p => p.platform === platformId)
-        if (existing >= 0) { const u = [...prev]; u[existing] = res.data; return u }
-        return [...prev, res.data]
-      })
-      setConnecting(null)
-      setInputs(prev => ({ ...prev, [platformId]: '' }))
-      showMessage(`${platformId} connected!`)
-    } catch {
-      showMessage('Failed to save — try again', true)
-    }
-  }
-
-  const disconnect = async (platformId) => {
-    await api.patch(`/platforms/disconnect/${platformId}`)
-    setConnected(prev => prev.map(p => p.platform === platformId ? { ...p, connected: false } : p))
-  }
-
-  const ebayButtonStyle = () => {
-    if (ebayConnecting) return { ...styles.ebayConnectBtn, opacity: 0.6 }
-    if (ebayError) return styles.ebayRetryBtn
-    return styles.ebayConnectBtn
-  }
-
-  const ebayButtonLabel = () => {
-    if (ebayConnecting) return '⏳ Connecting...'
-    if (ebayError) return '⚠ Retry Connect'
-    return '🔒 Sign in with eBay'
   }
 
   return (
@@ -146,10 +163,10 @@ const Settings = () => {
 
       <div style={styles.card}>
         <h2 style={styles.cardTitle}>Connected Platforms</h2>
-        <p style={styles.cardSub}>Connect your accounts to enable posting.</p>
+        <p style={styles.cardSub}>Connect your accounts to enable posting across platforms.</p>
 
         {ALL_PLATFORMS.map((p, i) => {
-          const conn = isConnected(p.id)
+          const isConn = connected[p.id]
           const isLast = i === ALL_PLATFORMS.length - 1
           return (
             <div key={p.id} style={{ ...styles.platformRow, borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
@@ -157,38 +174,27 @@ const Settings = () => {
                 <span style={styles.platformIcon}>{p.icon}</span>
                 <div>
                   <div style={styles.platformLabel}>{p.label}</div>
-                  <div style={styles.platformNote}>{p.note}</div>
+                  <div style={styles.platformNote}>{PLATFORM_NOTES[p.id]}</div>
                 </div>
               </div>
               <div style={styles.platformRight}>
-                {conn ? (
+                {isConn ? (
                   <>
                     <span style={styles.connectedDot}>● Connected</span>
-                    <button style={styles.disconnectBtn} onClick={() => disconnect(p.id)}>Disconnect</button>
+                    <button style={styles.disconnectBtn} onClick={() => disconnectPlatform(p.id)}>Disconnect</button>
                   </>
                 ) : p.oauth ? (
                   <button
-                    style={ebayButtonStyle()}
+                    style={ebayConnecting ? { ...styles.ebayConnectBtn, opacity: 0.6 } : ebayError ? styles.ebayRetryBtn : styles.ebayConnectBtn}
                     onClick={connectEbay}
                     disabled={ebayConnecting}
                   >
-                    {ebayButtonLabel()}
+                    {ebayConnecting ? '⏳ Connecting...' : ebayError ? '⚠ Retry Connect' : '🔒 Sign in with eBay'}
                   </button>
-                ) : connecting === p.id ? (
-                  <div style={styles.connectForm}>
-                    <input
-                      style={styles.input}
-                      placeholder="Username"
-                      value={inputs[p.id] || ''}
-                      onChange={e => setInputs(prev => ({ ...prev, [p.id]: e.target.value }))}
-                      onKeyDown={e => e.key === 'Enter' && saveConnect(p.id)}
-                      autoFocus
-                    />
-                    <button style={styles.saveBtn} onClick={() => saveConnect(p.id)}>Save</button>
-                    <button style={styles.cancelBtn} onClick={() => setConnecting(null)}>✕</button>
-                  </div>
                 ) : (
-                  <button style={styles.connectBtn} onClick={() => setConnecting(p.id)}>Connect</button>
+                  <button style={styles.connectBtn} onClick={() => connectPlatform(p.id)}>
+                    Connect
+                  </button>
                 )}
               </div>
             </div>
@@ -196,21 +202,23 @@ const Settings = () => {
         })}
       </div>
 
-      {ebayConnecting && (
-        <div style={styles.pollingBanner}>
-          <span style={styles.spinner}>⏳</span> Waiting for eBay authorization… Complete sign-in in the popup window.
-          <button style={styles.cancelPollBtn} onClick={() => {
-            clearInterval(pollRef.current)
-            setEbayConnecting(false)
-            if (popupRef.current && !popupRef.current.closed) popupRef.current.close()
-          }}>Cancel</button>
-        </div>
-      )}
-
       <div style={styles.card}>
         <h2 style={styles.cardTitle}>Browser Extension</h2>
-        <p style={styles.cardSub}>Install the HubAds extension to auto-fill Facebook, Craigslist, OfferUp and Nextdoor with one click. Works on Chrome, Edge, Brave, and Firefox.</p>
-        <button style={styles.extensionBtn} disabled>Coming Soon — Install Extension</button>
+        {extensionInstalled ? (
+          <p style={styles.extensionActive}>✓ HubAds extension is active — connect your platforms above to start posting.</p>
+        ) : (
+          <>
+            <p style={styles.cardSub}>Install the HubAds extension to post to Facebook, Craigslist, OfferUp, and Nextdoor automatically. Works on Chrome, Edge, and Brave.</p>
+            <a
+              href="https://chrome.google.com/webstore"
+              target="_blank"
+              rel="noreferrer"
+              style={styles.installBtn}
+            >
+              Install HubAds Extension
+            </a>
+          </>
+        )}
       </div>
     </div>
   )
@@ -221,28 +229,22 @@ const styles = {
   pageTitle: { color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 24 },
   messageBanner: { background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 10, padding: '12px 16px', fontSize: 14, marginBottom: 16 },
   messageBannerError: { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' },
-  pollingBanner: { display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', color: 'rgba(255,255,255,0.8)', borderRadius: 10, padding: '12px 16px', fontSize: 13, marginBottom: 16 },
-  spinner: { fontSize: 16 },
-  cancelPollBtn: { marginLeft: 'auto', background: 'none', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.5)', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' },
   card: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '20px 24px', marginBottom: 16 },
   cardTitle: { color: '#fff', fontSize: 15, fontWeight: 700, marginBottom: 6 },
-  cardSub: { color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 20 },
+  cardSub: { color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 16 },
+  extensionActive: { color: '#22c55e', fontSize: 13 },
   platformRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', gap: 12, flexWrap: 'wrap' },
   platformLeft: { display: 'flex', alignItems: 'center', gap: 12 },
   platformIcon: { fontSize: 24, flexShrink: 0 },
   platformLabel: { color: '#fff', fontWeight: 600, fontSize: 14 },
   platformNote: { color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2 },
   platformRight: { display: 'flex', alignItems: 'center', gap: 8 },
-  connectBtn: { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
-  ebayConnectBtn: { background: 'linear-gradient(135deg, #0064D2, #0099E0)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s' },
-  ebayRetryBtn: { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.2s' },
+  connectBtn: { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '7px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  ebayConnectBtn: { background: 'linear-gradient(135deg, #0064D2, #0099E0)', border: 'none', color: '#fff', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  ebayRetryBtn: { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.5)', color: '#f87171', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
   disconnectBtn: { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
   connectedDot: { color: '#22c55e', fontSize: 12 },
-  connectForm: { display: 'flex', gap: 6, alignItems: 'center' },
-  input: { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 13, fontFamily: 'inherit', outline: 'none', width: 160 },
-  saveBtn: { background: 'linear-gradient(135deg, #7B2FFF, #06B6D4)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
-  cancelBtn: { background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)', borderRadius: 8, padding: '7px 10px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
-  extensionBtn: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.3)', borderRadius: 8, padding: '10px 18px', fontSize: 13, cursor: 'not-allowed', fontFamily: 'inherit' },
+  installBtn: { display: 'inline-block', background: 'linear-gradient(135deg, #7B2FFF, #06B6D4)', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, textDecoration: 'none' },
 }
 
 export default Settings
