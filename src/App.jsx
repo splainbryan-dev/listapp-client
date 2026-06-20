@@ -10,6 +10,7 @@ import NewListing from './pages/NewListing'
 import ReviewPage from './pages/ReviewPage'
 import Settings from './pages/Settings'
 import AuthCallback from './pages/AuthCallback'
+import EbayCallback from './pages/EbayCallback'
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -30,6 +31,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/ebay-callback" element={<EbayCallback />} />
           <Route path="/listing/new" element={<ProtectedRoute><NewListing /></ProtectedRoute>} />
           <Route path="/review/:listingId" element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
