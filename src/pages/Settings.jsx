@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
 const ALL_PLATFORMS = [
-  { id: 'facebook', label: 'Facebook Marketplace', icon: '📘', loginUrl: 'https://www.facebook.com/login' },
+  { id: 'facebook', label: 'Facebook Marketplace', icon: '📘', loginUrl: 'https://www.facebook.com/login/?next=%2Fmarketplace%2Fcreate%2Fitem&login_attempt=1' },
   { id: 'ebay', label: 'eBay', icon: '🛒', loginUrl: null, oauth: true },
   { id: 'offerup', label: 'OfferUp', icon: '🟢', loginUrl: 'https://offerup.com/login' },
   { id: 'craigslist', label: 'Craigslist', icon: '📋', loginUrl: 'https://accounts.craigslist.org/login' },
@@ -51,6 +51,15 @@ const Settings = () => {
       if (loggedIn) setConnected(prev => ({ ...prev, [platform]: true }))
     }
     window.addEventListener('hubads-login-status', loginHandler)
+
+    // Also listen for real-time login status updates from extension
+    const extMsgHandler = (e) => {
+      const msg = e.detail
+      if (msg.type === 'LOGIN_STATUS_UPDATE' && msg.loggedIn) {
+        setConnected(prev => ({ ...prev, [msg.platform]: true }))
+      }
+    }
+    window.addEventListener('hubads-extension-message', extMsgHandler)
 
     return () => {
       window.removeEventListener('hubads-extension-ready', handler)
