@@ -2,16 +2,16 @@ import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 
 const ALL_PLATFORMS = [
-  { id: 'facebook', label: 'Facebook Marketplace', icon: '📘', loginUrl: 'https://www.facebook.com/login/?next=%2Fmarketplace%2Fcreate%2Fitem&login_attempt=1' },
-  { id: 'ebay', label: 'eBay', icon: '🛒', loginUrl: null, oauth: true },
-  { id: 'offerup', label: 'OfferUp', icon: '🟢', loginUrl: 'https://offerup.com/login' },
-  { id: 'craigslist', label: 'Craigslist', icon: '📋', loginUrl: 'https://accounts.craigslist.org/login' },
-  { id: 'nextdoor', label: 'Nextdoor', icon: '🏘️', loginUrl: 'https://nextdoor.com/login' },
+  { id: 'facebook', label: 'Facebook Marketplace', icon: '📘' },
+  { id: 'ebay', label: 'eBay', icon: '🛒', oauth: true },
+  { id: 'offerup', label: 'OfferUp', icon: '🟢' },
+  { id: 'craigslist', label: 'Craigslist', icon: '📋' },
+  { id: 'nextdoor', label: 'Nextdoor', icon: '🏘️' },
 ]
 
 const PLATFORM_NOTES = {
   facebook: 'Sign in to your Facebook account to enable posting',
-  ebay: 'Securely sign in with your eBay account',
+  ebay: 'Securely sign in with your eBay account via OAuth',
   offerup: 'Sign in to your OfferUp account to enable posting',
   craigslist: 'Sign in to your Craigslist account to enable posting',
   nextdoor: 'Sign in to your Nextdoor account to enable posting',
@@ -24,39 +24,36 @@ const Settings = () => {
   const [ebayError, setEbayError] = useState(false)
   const [extensionInstalled, setExtensionInstalled] = useState(false)
   const pollRef = useRef(null)
-  const popupRef = useRef(null)
 
   useEffect(() => {
-    // Check if extension is installed
+    // Check extension
+    if (window.__hubadsExtensionInstalled) setExtensionInstalled(true)
     const handler = () => setExtensionInstalled(true)
     window.addEventListener('hubads-extension-ready', handler)
 
-    // Check eBay connection status
+    // Check eBay
     api.get('/api/ebay-auth/status').then(res => {
-      if (res.data.connected) {
-        setConnected(prev => ({ ...prev, ebay: true }))
-      }
+      if (res.data.connected) setConnected(prev => ({ ...prev, ebay: true }))
     }).catch(() => {})
 
-    // Check other platform login status via extension
-    if (extensionInstalled) {
-      ALL_PLATFORMS.filter(p => !p.oauth).forEach(p => {
-        window.dispatchEvent(new CustomEvent('hubads-check-login', { detail: { platform: p.id } }))
-      })
-    }
+    // Check other platforms via extension
+    const platforms = ['facebook', 'craigslist', 'offerup', 'nextdoor']
+    platforms.forEach(p => {
+      window.dispatchEvent(new CustomEvent('hubads-check-login', { detail: { platform: p } }))
+    })
 
-    // Listen for login status responses from extension
+    // Listen for login status from extension
     const loginHandler = (e) => {
       const { platform, loggedIn } = e.detail
       if (loggedIn) setConnected(prev => ({ ...prev, [platform]: true }))
     }
     window.addEventListener('hubads-login-status', loginHandler)
 
-    // Also listen for real-time login status updates from extension
+    // Listen for real-time updates
     const extMsgHandler = (e) => {
       const msg = e.detail
-      if (msg.type === 'LOGIN_STATUS_UPDATE' && msg.loggedIn) {
-        setConnected(prev => ({ ...prev, [msg.platform]: true }))
+      if (msg.type === 'LOGIN_STATUS_UPDATE') {
+        setConnected(prev => ({ ...prev, [msg.platform]: msg.loggedIn }))
       }
     }
     window.addEventListener('hubads-extension-message', extMsgHandler)
@@ -64,9 +61,10 @@ const Settings = () => {
     return () => {
       window.removeEventListener('hubads-extension-ready', handler)
       window.removeEventListener('hubads-login-status', loginHandler)
+      window.removeEventListener('hubads-extension-message', extMsgHandler)
       if (pollRef.current) clearInterval(pollRef.current)
     }
-  }, [extensionInstalled])
+  }, [])
 
   const showMessage = (msg, isError = false) => {
     setMessage({ text: msg, error: isError })
@@ -78,24 +76,8 @@ const Settings = () => {
       showMessage('Please install the HubAds extension first to connect platforms.', true)
       return
     }
-    const p = ALL_PLATFORMS.find(p => p.id === platform)
-    if (!p?.loginUrl) return
-
-    const width = 500, height = 650
-    const left = window.screenX + (window.outerWidth - width) / 2
-    const top = window.screenY + (window.outerHeight - height) / 2
-    const popup = window.open(p.loginUrl, `${platform}_login`, `width=${width},height=${height},left=${left},top=${top}`)
-    popupRef.current = popup
-
-    // Poll for login completion via extension
-    const poll = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(poll)
-        // Re-check login status after popup closes
-        window.dispatchEvent(new CustomEvent('hubads-check-login', { detail: { platform } }))
-        return
-      }
-    }, 500)
+    // Tell extension background to open login tab and track it
+    window.dispatchEvent(new CustomEvent('hubads-open-login', { detail: { platform } }))
   }
 
   const disconnectPlatform = async (platformId) => {
@@ -107,13 +89,11 @@ const Settings = () => {
         showMessage('Failed to disconnect eBay', true)
       }
     } else {
-      // For extension platforms just mark as disconnected locally
+      window.dispatchEvent(new CustomEvent('hubads-disconnect', { detail: { platform: platformId } }))
       setConnected(prev => ({ ...prev, [platformId]: false }))
-      showMessage(`Disconnected from ${platformId}. You may also want to log out on the platform directly.`)
     }
   }
 
-  // eBay OAuth flow
   const connectEbay = () => {
     setEbayError(false)
     const token = localStorage.getItem('token')
@@ -122,7 +102,6 @@ const Settings = () => {
     const left = window.screenX + (window.outerWidth - width) / 2
     const top = window.screenY + (window.outerHeight - height) / 2
     const popup = window.open(url, 'ebay_oauth', `width=${width},height=${height},left=${left},top=${top}`)
-    popupRef.current = popup
     setEbayConnecting(true)
 
     pollRef.current = setInterval(() => {
@@ -133,15 +112,14 @@ const Settings = () => {
           return
         }
         const popupUrl = popup.location.href
-        if (popupUrl && popupUrl.includes('error=')) {
+        if (popupUrl?.includes('error=')) {
           clearInterval(pollRef.current)
           popup.close()
           setEbayConnecting(false)
           setEbayError(true)
-          showMessage('eBay authorization failed — tap "Retry Connect" to try again.', true)
-          return
+          showMessage('eBay authorization failed — tap Retry to try again.', true)
         }
-        if (popupUrl && popupUrl.includes('success=true')) {
+        if (popupUrl?.includes('success=true')) {
           clearInterval(pollRef.current)
           popup.close()
           setConnected(prev => ({ ...prev, ebay: true }))
@@ -149,15 +127,10 @@ const Settings = () => {
           setEbayError(false)
           showMessage('eBay connected successfully!')
         }
-      } catch { }
+      } catch {}
     }, 500)
 
-    setTimeout(() => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current)
-        setEbayConnecting(false)
-      }
-    }, 180000)
+    setTimeout(() => { if (pollRef.current) { clearInterval(pollRef.current); setEbayConnecting(false) } }, 180000)
   }
 
   return (
@@ -218,12 +191,7 @@ const Settings = () => {
         ) : (
           <>
             <p style={styles.cardSub}>Install the HubAds extension to post to Facebook, Craigslist, OfferUp, and Nextdoor automatically. Works on Chrome, Edge, and Brave.</p>
-            <a
-              href="https://chrome.google.com/webstore"
-              target="_blank"
-              rel="noreferrer"
-              style={styles.installBtn}
-            >
+            <a href="https://chrome.google.com/webstore" target="_blank" rel="noreferrer" style={styles.installBtn}>
               Install HubAds Extension
             </a>
           </>
